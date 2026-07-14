@@ -10,7 +10,7 @@ type BookingForm = { name: string; phone: string; slip: File | null };
 type SiteSettings = {
   page_title: string; page_subtitle: string; announcement_text: string;
   price_per_number: string; prize1_amount: string; prize1_label: string;
-  prize2_amount: string; prize2_label: string; bank_name: string;
+  bank_name: string;
   bank_number: string; bank_account_name: string; bank_note: string;
   footer_text: string; background_type: "gradient" | "solid";
   background_color: string; gradient_from: string; gradient_to: string;
@@ -19,8 +19,7 @@ type SiteSettings = {
 const DEFAULT_SETTINGS: SiteSettings = {
   page_title:"เบอร์เงิน 29", page_subtitle:"เลือกเบอร์นำโชคที่ชอบ แล้วจองได้เลย",
   announcement_text:"ลุ้นรับรางวัลมูลค่ากว่า 1,000 บาท", price_per_number:"29",
-  prize1_amount:"1,000", prize1_label:"รางวัล 2 ตัวล่าง", prize2_amount:"150",
-  prize2_label:"รางวัลปลอบใจ 2 ตัวบน", bank_name:"ธนาคารกสิกรไทย",
+  prize1_amount:"1,000", prize1_label:"รางวัล 2 ตัวล่าง", bank_name:"ธนาคารกสิกรไทย",
   bank_number:"056-165-0-3402", bank_account_name:"จีรวัสส์ สระทองนวน",
   bank_note:"โอนแล้วอย่าลืมอัปโหลดสลิปในขั้นตอนการจองนะคะ",
   footer_text:"© 2026 แผงเบอร์เงิน · ข้อมูลของคุณใช้เพื่อยืนยันการจองเท่านั้น",
@@ -75,7 +74,6 @@ export default function Home() {
         <section className="summary" aria-label="ข้อมูลรางวัล">
           <article><span className="emoji">💰</span><strong>{settings.price_per_number} บาท</strong><small>ราคาต่อเบอร์</small></article>
           <article><span className="emoji">🏆</span><strong>{settings.prize1_amount} บาท</strong><small>{settings.prize1_label}</small></article>
-          <article><span className="emoji">🎁</span><strong>{settings.prize2_amount} บาท</strong><small>{settings.prize2_label}</small></article>
         </section>
 
         <section className="bank-card">
