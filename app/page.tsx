@@ -7,6 +7,25 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 type NumberState = { number: string; status: "pending" | "approved" };
 type BookingForm = { name: string; phone: string; slip: File | null };
+type SiteSettings = {
+  page_title: string; page_subtitle: string; announcement_text: string;
+  price_per_number: string; prize1_amount: string; prize1_label: string;
+  prize2_amount: string; prize2_label: string; bank_name: string;
+  bank_number: string; bank_account_name: string; bank_note: string;
+  footer_text: string; background_type: "gradient" | "solid";
+  background_color: string; gradient_from: string; gradient_to: string;
+};
+
+const DEFAULT_SETTINGS: SiteSettings = {
+  page_title:"เบอร์เงิน 29", page_subtitle:"เลือกเบอร์นำโชคที่ชอบ แล้วจองได้เลย",
+  announcement_text:"ลุ้นรับรางวัลมูลค่ากว่า 1,000 บาท", price_per_number:"29",
+  prize1_amount:"1,000", prize1_label:"รางวัล 2 ตัวล่าง", prize2_amount:"150",
+  prize2_label:"รางวัลปลอบใจ 2 ตัวบน", bank_name:"ธนาคารกสิกรไทย",
+  bank_number:"056-165-0-3402", bank_account_name:"จีรวัสส์ สระทองนวน",
+  bank_note:"โอนแล้วอย่าลืมอัปโหลดสลิปในขั้นตอนการจองนะคะ",
+  footer_text:"© 2026 แผงเบอร์เงิน · ข้อมูลของคุณใช้เพื่อยืนยันการจองเท่านั้น",
+  background_type:"gradient", background_color:"#fff2f8", gradient_from:"#fff2f8", gradient_to:"#eaf9f5"
+};
 
 const headers = (token?: string) => ({
   apikey: SUPABASE_ANON_KEY,
@@ -20,12 +39,17 @@ export default function Home() {
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/public_number_status?select=number,status`, { headers: headers(), cache: "no-store" });
-      if (!res.ok) throw new Error("not-ready");
-      setTaken(await res.json());
+      const [numberRes,settingsRes] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/public_number_status?select=number,status`, { headers: headers(), cache: "no-store" }),
+        fetch(`${SUPABASE_URL}/rest/v1/site_settings?id=eq.1&select=*`, { headers: headers(), cache: "no-store" })
+      ]);
+      if (!numberRes.ok) throw new Error("not-ready");
+      setTaken(await numberRes.json());
+      if(settingsRes.ok){ const data=await settingsRes.json(); if(data[0]) setSettings({...DEFAULT_SETTINGS,...data[0]}); }
     } catch {
       setNotice("ระบบกำลังรอเปิดฐานข้อมูล หมายเลขทั้งหมดจะแสดงเป็นว่างชั่วคราว");
     } finally { setLoading(false); }
@@ -34,28 +58,31 @@ export default function Home() {
   useEffect(() => { refresh(); }, [refresh]);
   const takenSet = useMemo(() => new Set(taken.map(x => x.number)), [taken]);
 
+  const background = settings.background_type === "solid"
+    ? settings.background_color
+    : `linear-gradient(145deg,${settings.gradient_from},${settings.gradient_to})`;
   return (
-    <main className="site-shell">
+    <main className="site-shell" style={{background}}>
       <Decor />
       <div className="page">
         <header className="hero">
-          <div className="announcement">★ ลุ้นรับรางวัลมูลค่ากว่า 1,000 บาท ★</div>
+          <div className="announcement">★ {settings.announcement_text} ★</div>
           <p className="eyebrow">LUCKY NUMBER COLLECTION</p>
-          <h1>เบอร์เงิน <span>29</span></h1>
-          <p className="subtitle">เลือกเบอร์นำโชคที่ชอบ แล้วจองได้เลย</p>
+          <h1>{settings.page_title}</h1>
+          <p className="subtitle">{settings.page_subtitle}</p>
         </header>
 
         <section className="summary" aria-label="ข้อมูลรางวัล">
-          <article><span className="emoji">💰</span><strong>29 บาท</strong><small>ราคาต่อเบอร์</small></article>
-          <article><span className="emoji">🏆</span><strong>1,000 บาท</strong><small>รางวัล 2 ตัวล่าง</small></article>
-          <article><span className="emoji">🎁</span><strong>150 บาท</strong><small>รางวัลปลอบใจ 2 ตัวบน</small></article>
+          <article><span className="emoji">💰</span><strong>{settings.price_per_number} บาท</strong><small>ราคาต่อเบอร์</small></article>
+          <article><span className="emoji">🏆</span><strong>{settings.prize1_amount} บาท</strong><small>{settings.prize1_label}</small></article>
+          <article><span className="emoji">🎁</span><strong>{settings.prize2_amount} บาท</strong><small>{settings.prize2_label}</small></article>
         </section>
 
         <section className="bank-card">
           <div className="bank-mark">K</div>
-          <div><small>โอนเงินมาที่บัญชีธนาคารกสิกรไทย</small><strong>056-165-0-3402</strong><span>จีรวัสส์ สระทองนวน</span></div>
+          <div><small>โอนเงินมาที่บัญชี{settings.bank_name}</small><strong>{settings.bank_number}</strong><span>{settings.bank_account_name}</span></div>
         </section>
-        <p className="bank-note">✓ โอนแล้วอย่าลืมอัปโหลดสลิปในขั้นตอนการจองนะคะ</p>
+        <p className="bank-note">✓ {settings.bank_note}</p>
 
         <section className="number-panel">
           <div className="panel-heading"><div><p>เลือกหมายเลข</p><h2>เบอร์ไหนถูกใจคุณ?</h2></div><span>{99 - takenSet.size} เบอร์ว่าง</span></div>
@@ -68,14 +95,14 @@ export default function Home() {
           </div>
           <div className="legend"><span><i className="free" />ว่าง</span><span><i className="taken" />จองแล้ว ({takenSet.size})</span></div>
         </section>
-        <footer>© 2026 แผงเบอร์เงิน · ข้อมูลของคุณใช้เพื่อยืนยันการจองเท่านั้น</footer>
+        <footer>{settings.footer_text}</footer>
       </div>
-      {selected && <BookingDialog number={selected} onClose={() => setSelected(null)} onSuccess={() => { setSelected(null); refresh(); }} />}
+      {selected && <BookingDialog number={selected} price={settings.price_per_number} onClose={() => setSelected(null)} onSuccess={() => { setSelected(null); refresh(); }} />}
     </main>
   );
 }
 
-function BookingDialog({ number, onClose, onSuccess }: { number: string; onClose: () => void; onSuccess: () => void }) {
+function BookingDialog({ number, price, onClose, onSuccess }: { number: string; price:string; onClose: () => void; onSuccess: () => void }) {
   const [form, setForm] = useState<BookingForm>({ name: "", phone: "", slip: null });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -106,7 +133,7 @@ function BookingDialog({ number, onClose, onSuccess }: { number: string; onClose
       <button className="dialog-close" onClick={onClose} aria-label="ปิด">×</button>
       <div className="dialog-top"><div>{number}</div><span><small>คุณเลือกเบอร์</small><b id="booking-title">หมายเลข {number}</b></span></div>
       <form onSubmit={submit}>
-        <p className="form-intro">กรอกข้อมูลและแนบสลิปโอนเงิน 29 บาท</p>
+        <p className="form-intro">กรอกข้อมูลและแนบสลิปโอนเงิน {price} บาท</p>
         <label>ชื่อ–นามสกุล<input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} autoComplete="name" placeholder="เช่น สมชาย ใจดี" /></label>
         <label>เบอร์ติดต่อ<input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} inputMode="numeric" autoComplete="tel" placeholder="0812345678" /></label>
         <label>สลิปโอนเงิน<button type="button" className="file-button" onClick={() => fileRef.current?.click()}>{form.slip ? `✓ ${form.slip.name}` : "＋ เลือกรูปสลิป"}</button><input ref={fileRef} hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setForm({ ...form, slip: e.target.files?.[0] || null })} /></label>
